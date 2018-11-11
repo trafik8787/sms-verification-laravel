@@ -5,6 +5,7 @@ namespace Phonedotcom\SmsVerification;
 use Illuminate\Support\Facades\Cache;
 use Phonedotcom\SmsVerification\Exceptions\GenerateCodeException;
 use Phonedotcom\SmsVerification\Exceptions\ValidateCodeException;
+use Phonedotcom\SmsVerification\Exceptions\ConfigException;
 
 /**
  * Class CodeProcessor
@@ -55,15 +56,19 @@ class CodeProcessor
      */
     private function __construct()
     {
-        $this->cachePrefix = (string) config('sms-verification.cache-prefix', $this->cachePrefix);
-        $this->codeLength = config('sms-verification.code-length', $this->codeLength);
-        if (empty($this->codeLength) || !is_int($this->codeLength)) {
+        $this->cachePrefix = (string) Config::get('cache-prefix', $this->cachePrefix);
+        $this->codeLength = Config::get('code-length', $this->codeLength);
+
+        if (empty($this->codeLength) || empty($this->codeLength)) {
             throw new ConfigException('Incorrect code length was specified in config/sms-verification.php');
         }
-        $this->minutesLifetime = config('sms-verification.code-lifetime', $this->minutesLifetime);
-        if (empty($this->minutesLifetime) || !is_int($this->minutesLifetime)) {
+        $this->minutesLifetime = Config::get('code-lifetime', $this->minutesLifetime);
+
+        if (empty($this->minutesLifetime) || empty($this->minutesLifetime)) {
+
             throw new ConfigException('Incorrect code lifetime was specified in config/sms-verification.php');
         }
+
     }
 
     /**
@@ -81,6 +86,7 @@ class CodeProcessor
                 $randomFunction = 'mt_rand';
             }
             $code = $randomFunction(pow(10, $this->codeLength - 1), pow(10, $this->codeLength) - 1);
+
             Cache::put($this->cachePrefix . $code, $this->trimPhoneNumber($phoneNumber), $this->minutesLifetime);
         } catch (\Exception $e){
             throw new GenerateCodeException('Code generation failed', 0, $e);
