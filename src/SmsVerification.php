@@ -20,6 +20,7 @@ class SmsVerification
      */
     public static function sendCode($phoneNumber)
     {
+
         $exceptionClass = null;
         $expiresAt = null;
         $response = [];
@@ -27,15 +28,18 @@ class SmsVerification
             static::validatePhoneNumber($phoneNumber);
             $now = time();
             $code = CodeProcessor::getInstance()->generateCode($phoneNumber);
-            $translationCode = config('sms-verification.message-translation-code');
+            $translationCode = Config::get('message-translation-code');
             $text = $translationCode
                 ? trans($translationCode, ['code' => $code])
                 : 'SMS verification code: ' . $code;
-            $senderClassName = config('sms-verification.sender-class', Sender::class);
+            $senderClassName = Config::get('sender-class', Sender::class);
+
             $sender = $senderClassName::getInstance();
+
             if (!($sender instanceof SenderInterface)){
                 throw new \Exception('Sender class ' . $senderClassName . ' doesn\'t implement SenderInterface');
             }
+
             $success = $sender->send($phoneNumber, $text);
             $description = $success ? 'OK' : 'Error';
             if ($success){
