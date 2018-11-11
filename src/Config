@@ -1,0 +1,32 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: vitalik
+ * Date: 11.11.18
+ * Time: 20:44
+ */
+
+namespace Phonedotcom\SmsVerification;
+
+
+class Config
+{
+    private static $type = null;
+
+
+    public static function get($key)
+    {
+        if (self::$type === null) {
+            self::$type = str_contains(app()->version(), 'Lumen') === true;
+
+        } 
+
+        if (self::$type === false) {
+            return config($key);
+        } else {
+          return env($key);
+        }
+
+    }
+
+}
