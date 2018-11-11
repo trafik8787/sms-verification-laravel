@@ -24,34 +24,21 @@ class Sender implements SenderInterface
     private static $instance;
 
     /**
-     * Access-token for Phone.com API
-     * @var string
-     */
-    private $accessToken;
-
-    /**
      * API root URL
      * @var string
      */
     private $url;
+
+
+    private $smsUser;
+
+    private $smsPass;
 
     /**
      * User's Phone.com number which will be used for SMS sending
      * @var string
      */
     private $phoneNumber;
-
-    /**
-     * Phone.com account ID
-     * @var int
-     */
-    private $accountId;
-
-    /**
-     * Phone.com extension ID
-     * @var int|null
-     */
-    private $extensionId;
 
     /**
      * Singleton
@@ -62,6 +49,7 @@ class Sender implements SenderInterface
         if (is_null(static::$instance)) {
             static::$instance = new static();
         }
+
         return static::$instance;
     }
 
@@ -71,22 +59,15 @@ class Sender implements SenderInterface
      */
     private function __construct()
     {
-        $this->accessToken = config('sms-verification.phone-com-access-token');
-        if (empty($this->accessToken)) {
-            throw new ConfigException('Phone.com Access Token is not specified in config/sms-verification.php');
-        }
-        $this->url = rtrim(config('sms-verification.phone-com-api-url', 'https://api.phone.com/v4'), '/');
-        if (empty($this->url)) {
-            throw new ConfigException('Phone.com API URL is not specified in config/sms-verification.php');
-        }
-        $this->phoneNumber = config('sms-verification.phone-com-phone-number');
+
+        $this->phoneNumber = Config::get('phone-com-phone-number');
         if (empty($this->phoneNumber)) {
             throw new ConfigException('Phone.com Phone Number is not specified in config/sms-verification.php');
         }
-        $this->accountId = config('sms-verification.phone-com-account-id');
-        if (empty($this->accountId)) {
-            throw new ConfigException('Phone.com Account ID is not specified in config/sms-verification.php');
-        }
+
+        $this->smsUser = Config::get('sms_user');
+        $this->smsPass = Config::get('sms_pass');
+
         // $this->extensionId = config('sms-verification.phone-com-extension-id'); // Phone.com doesn't support it yet
     }
 
@@ -99,20 +80,13 @@ class Sender implements SenderInterface
      */
     public function send($to, $text)
     {
-        $client = new \GuzzleHttp\Client();
         try {
-            $res = $client->request('POST', $this->buildApiCallUrl(), [
-                'headers' => [
-                    'User-Agent' => 'Phone.com/SMS-Verification-Laravel',
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $this->accessToken,
-                ],
-                'json' => [
-                    'text' => $text,
-                    'from' => $this->phoneNumber,
-                    'to' => $to,
-                ],
-            ]);
+            $client = new SendSingleTextualSms(new BasicAuthConfiguration($this->smsUser, $this->smsPass));
+            $requestBody = new SMSTextualRequest();
+            $requestBody->setFrom($this->phoneNumber);
+            $requestBody->setTo([$to]);
+            $requestBody->setText($text);
+            $response = $client->execute($requestBody);
         } catch (\Exception $e){
             throw new SenderException('SMS sending was failed', null, 0, $e);
         }
@@ -122,17 +96,5 @@ class Sender implements SenderInterface
         return true;
     }
 
-    /**
-     * Build SMS endpoint URL
-     * @return string
-     */
-    private function buildApiCallUrl(){
-        $url = $this->url . '/accounts/' . $this->accountId;
-        if ($this->extensionId){
-            $url .= '/extensions/' . $this->extensionId;
-        }
-        $url .= '/sms';
-        return $url;
-    }
 
 }
