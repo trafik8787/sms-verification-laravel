@@ -14,17 +14,17 @@ class Config
     private static $type = null;
 
 
-    public static function get($key)
+    public static function get($key, $default = null)
     {
         if (self::$type === null) {
             self::$type = str_contains(app()->version(), 'Lumen') === true;
 
-        } 
+        }
 
         if (self::$type === false) {
-            return config($key);
+            return config($key, $default);
         } else {
-          return env($key);
+            return env($key, $default);
         }
 
     }
