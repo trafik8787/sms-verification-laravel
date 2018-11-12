@@ -4,6 +4,9 @@ namespace Phonedotcom\SmsVerification;
 
 use Phonedotcom\SmsVerification\Exceptions\ConfigException;
 use Phonedotcom\SmsVerification\Exceptions\SenderException;
+use infobip\api\client\SendSingleTextualSms;
+use infobip\api\configuration\BasicAuthConfiguration;
+use infobip\api\model\sms\mt\send\textual\SMSTextualRequest;
 
 /**
  * Class Sender
@@ -80,6 +83,7 @@ class Sender implements SenderInterface
      */
     public function send($to, $text)
     {
+
         try {
             $client = new SendSingleTextualSms(new BasicAuthConfiguration($this->smsUser, $this->smsPass));
             $requestBody = new SMSTextualRequest();
@@ -87,10 +91,12 @@ class Sender implements SenderInterface
             $requestBody->setTo([$to]);
             $requestBody->setText($text);
             $response = $client->execute($requestBody);
+            //print_r($response->getBulkId());
+            //die(print_r($response->getBulkId()));
         } catch (\Exception $e){
             throw new SenderException('SMS sending was failed', null, 0, $e);
         }
-        if ($res->getStatusCode() != self::EXPECTED_HTTP_STATUS){
+        if (empty($response)){
             throw new SenderException('SMS was not sent', $res);
         }
         return true;
