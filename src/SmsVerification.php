@@ -44,18 +44,25 @@ class SmsVerification
             $description = $success ? 'OK' : 'Error';
             if ($success){
                 $response['expires_at'] = $now + CodeProcessor::getInstance()->getLifetime();
+                $response['code'] = 200;
             }
+
         } catch (\Exception $e) {
+
             $description = $e->getMessage();
             if (!($e instanceof ValidationException)) {
                 Log::error('SMS Verification code sending was failed: ' . $description);
             }
             $success = false;
-            $response['error'] = ($e instanceof SmsVerificationException) ? $e->getErrorCode() : 999;
+           // $response['error'] = ($e instanceof SmsVerificationException) ? $e->getErrorCode() : 999;
+            $response['code'] = 401;
         }
-        $response['success'] = $success;
-        $response['description'] = $description;
-        return $response;
+
+        $response['status'] = $success;
+        $response['message'] = $description;
+
+
+        return response($response, $response['code']);
     }
 
     /**
@@ -75,17 +82,22 @@ class SmsVerification
             static::validatePhoneNumber($phoneNumber);
             $success = CodeProcessor::getInstance()->validateCode($code, $phoneNumber);
             $description = $success ? 'OK' : 'Wrong code';
+            $response['code'] = 200;
+            
         } catch (\Exception $e) {
+
             $description = $e->getMessage();
             if (!($e instanceof ValidationException)) {
                 Log::error('SMS Verification check was failed: ' . $description);
             }
             $success = false;
             $response['error'] = ($e instanceof SmsVerificationException) ? $e->getErrorCode() : 999;
+            $response['code'] = 401;
         }
-        $response['success'] = $success;
-        $response['description'] = $description;
-        return $response;
+        $response['status'] = $success;
+        $response['message'] = $description;
+        
+        return response($response, $response['code']);
     }
 
     /**
