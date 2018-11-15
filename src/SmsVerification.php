@@ -61,8 +61,7 @@ class SmsVerification
         $response['status'] = $success;
         $response['message'] = $description;
 
-
-        return response($response, $response['code']);
+        return $response;
     }
 
     /**
@@ -97,7 +96,7 @@ class SmsVerification
         $response['status'] = $success;
         $response['message'] = $description;
         
-        return response($response, $response['code']);
+        return $response;
     }
 
     /**
